@@ -1,7 +1,9 @@
 package org.ssglobal.training.codes;
 
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ScoreInfo {
@@ -49,41 +51,105 @@ public class ScoreInfo {
 
 class Score {
 
-	public long getNumScores(ScoreInfo[] scoreData) {
-		return Arrays.stream(scoreData).parallel().count();
+	public int getNumScores(List<ScoreInfo> scoreData) {
+		return scoreData.size();
 	}
 
-	public double getAverage(ScoreInfo[] scoreData) {
-		int total = Arrays.stream(scoreData).parallel().mapToInt(s -> s.getScore()).sum();
-		return (double) total / getNumScores(scoreData);
+	public double getAverage(List<ScoreInfo> scoreData) {
+		Function<ScoreInfo, Integer> mapScores = (s)->{
+			return s.getScore();
+		};
+		int total = scoreData.stream().map(mapScores).mapToInt(Integer::intValue).sum();
+		return (double) scoreData.stream().map(mapScores).mapToInt(Integer::intValue).average().orElse(total);
 	}
 
-	public long getNumberAListers(ScoreInfo[] scoreData) {
-		return Arrays.stream(scoreData).parallel().filter(s -> s.getScore() >= 90).count();
+	public long getNumberAListers(List<ScoreInfo> scoreData) {
+		Predicate<ScoreInfo> filterAListers = (s)->{
+			if (s.getScore() >= 90) {
+				return true;
+			}return false;
+		};
+		return scoreData.stream().filter(filterAListers).count();
 	}
 
-	public List<String> getFailingStudentList(ScoreInfo[] scoreData) {
-		return Arrays.stream(scoreData).filter(s -> (s.getScore() < 70))
-				.map(s -> (s.getFirstName() + " " + s.getLastName())).collect(Collectors.toList());
+	public List<String> getFailingStudentList(List<ScoreInfo> scoreData) {
+		Comparator<ScoreInfo> sorter = (o1, o2)->{
+			if(o1.getFirstName().compareTo(o2.getFirstName()) > 0) {
+				return 2;
+			}else if (o1.getFirstName().compareTo(o2.getFirstName()) < 0) {
+				return -2;
+			}else {
+			return 0;
+			}
+		};
+		
+		Predicate<ScoreInfo> filterFailingStudents = (s)->{
+			if (s.getScore() < 70) {
+				return true;
+			}return false;
+		};
+		Function<ScoreInfo, String> mapNames = (s)->{
+			return String.join(" ", s.getFirstName(), s.getLastName());
+		};
+		return scoreData.stream().sorted(sorter).filter(filterFailingStudents).map(mapNames).collect(Collectors.toList());
 	}
 
-	public void printPassingStudents(ScoreInfo[] scoreData) {
-		System.out.println("Passing students: ");
-		Arrays.stream(scoreData).filter(s -> (s.getScore() >= 70)).map(s -> (s.getFirstName() + " " + s.getLastName()))
-		.collect(Collectors.toList()).stream().forEach(System.out::println);
-		System.out.println();
+	public void printPassingStudents(List<ScoreInfo> scoreData) {
+		Comparator<ScoreInfo> sorter = (o1, o2)->{
+			if(o1.getFirstName().compareTo(o2.getFirstName()) > 0) {
+				return 2;
+			}else if (o1.getFirstName().compareTo(o2.getFirstName()) < 0) {
+				return -2;
+			}else {
+			return 0;
+			}
+		};
+		
+		Predicate<ScoreInfo> filterPassingStudents = (s)->{
+			if (s.getScore() >= 70) {
+				return true;
+			}return false;
+		};
+		Function<ScoreInfo, String> mapNames = (s)->{
+			return String.join(" ", s.getFirstName(), s.getLastName());
+		};
+		List<String> passingStudents = scoreData.stream().sorted(sorter).filter(filterPassingStudents).map(mapNames).collect(Collectors.toList());
+		System.out.println(passingStudents);
 	}
 
-	public void displayAllStudents(ScoreInfo[] scoreData) {
-		System.out.println("Students:");
-		Arrays.stream(scoreData).sorted((s1, s2) -> s1.getLastName().compareTo(s2.getLastName()))
-		.forEach(s -> System.out.printf("  %s, %s: %d%n", s.getLastName(), s.getFirstName(), s.getScore()));
-		System.out.println();
+	public void displayAllStudents(List<ScoreInfo> scoreData) {
+		Comparator<ScoreInfo> sorter = (o1, o2)->{
+			if(o1.getLastName().compareTo(o2.getLastName()) > 0) {
+				return 2;
+			}else if (o1.getLastName().compareTo(o2.getLastName()) < 0) {
+				return -2;
+			}else {
+			return 0;
+			}
+		};
+		
+		Function<ScoreInfo, String> mapNames = (s)->{
+			return String.join(" ", s.getFirstName(), s.getLastName(), String.valueOf(s.getScore()));
+		};
+		List<String> passingStudents = scoreData.stream().sorted(sorter).map(mapNames).collect(Collectors.toList());
+		System.out.println(passingStudents);
 	}
 
-	public List<String> getStudentRecords(ScoreInfo[] scoreData) {
-		return Arrays.stream(scoreData).sorted((s1, s2) -> s1.getScore() - s2.getScore())
-				.map(s -> (s.getFirstName() + " " + s.getLastName()) + " " + s.getScore()).collect(Collectors.toList());
+	public List<String> getStudentRecords(List<ScoreInfo> scoreData) {
+		Comparator<ScoreInfo> sorter = (o1, o2)->{
+			if(o1.getScore() > o2.getScore()) {
+				return 2;
+			}else if (o1.getScore() < o2.getScore()) {
+				return -2;
+			}else {
+			return 0;
+			}
+		};
+		
+		Function<ScoreInfo, String> mapNames = (s)->{
+			return String.join(" ", s.getFirstName(), s.getLastName(), String.valueOf(s.getScore()));
+		};
+		return scoreData.stream().sorted(sorter).map(mapNames).collect(Collectors.toList());
 	}
 }
 
